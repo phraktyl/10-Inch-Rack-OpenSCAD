@@ -63,8 +63,15 @@ module switch_mount(switch_width, switch_height, switch_depth, switch_count, cas
     zip_tie_indent_depth = 2;
     zip_tie_cutout_depth = 7;
 
-    chassis_depth_main = switch_depth + zip_tie_hole_length + case_thickness;
-    chassis_depth_indented = chassis_depth_main - zip_tie_indent_depth;
+    // CORRECTED DEPTH CALCULATION:
+    // Total depth: switch_depth + zip_tie_hole_length + case_thickness wall at back
+    chassis_depth_main = front_thickness + switch_depth + zip_tie_hole_length + case_thickness;
+    
+    // Zip ties start at back of switch area (from Z=0)
+    zip_tie_start_z = front_thickness + switch_depth;  // 3 + 200 = 203mm
+    
+    // Chassis body depth (excluding front panel, from front_thickness to back)
+    full_chassis_depth = switch_depth + zip_tie_hole_length + case_thickness;  // 200 + 5 + 2 = 207mm
 
     hole_total_width = zip_tie_hole_count * zip_tie_hole_width;
     space_between_holes = (rack_width - hole_total_width) / (zip_tie_hole_count + 1);
@@ -130,18 +137,20 @@ module switch_mount(switch_width, switch_height, switch_depth, switch_count, cas
                 channel_depth = wire_diameter / 2 - case_thickness;
                 
                 // Left side channel - extends from switch edge toward outer wall
+                // Extends full chassis depth
                 translate([hole_left_x, y_center, front_thickness]) {
                     hull() {
-                        cylinder(h = switch_depth, d = channel_diameter);
-                        translate([-channel_depth, 0, 0]) cylinder(h = switch_depth, d = channel_diameter);
+                        cylinder(h = full_chassis_depth, d = channel_diameter);
+                        translate([-channel_depth, 0, 0]) cylinder(h = full_chassis_depth, d = channel_diameter);
                     }
                 }
                 
                 // Right side channel - extends from switch edge toward outer wall
+                // Extends full chassis depth
                 translate([hole_right_x, y_center, front_thickness]) {
                     hull() {
-                        cylinder(h = switch_depth, d = channel_diameter);
-                        translate([channel_depth, 0, 0]) cylinder(h = switch_depth, d = channel_diameter);
+                        cylinder(h = full_chassis_depth, d = channel_diameter);
+                        translate([channel_depth, 0, 0]) cylinder(h = full_chassis_depth, d = channel_diameter);
                     }
                 }
             }
@@ -166,8 +175,8 @@ module switch_mount(switch_width, switch_height, switch_depth, switch_count, cas
             // Create one continuous chassis body
             total_chassis_height = total_switch_area + (2 * wall_thickness);
             translate([side_margin, (height - total_chassis_height) / 2, front_thickness]) {
-                // Chassis extends full depth including zip tie area
-                rounded_chassis_profile(chassis_width, total_chassis_height, chassis_edge_radius, switch_depth + zip_tie_hole_length + case_thickness);
+                // Use full_chassis_depth (207mm)
+                rounded_chassis_profile(chassis_width, total_chassis_height, chassis_edge_radius, full_chassis_depth);
             }
             
             // Add wire channels if front_wire_holes is enabled
@@ -299,9 +308,6 @@ module switch_mount(switch_width, switch_height, switch_depth, switch_count, cas
         // Calculate starting Y position (centered in rack) and total chassis height
         y_start = (height - total_switch_area - (2 * wall_thickness)) / 2 + wall_thickness;
         total_chassis_height = total_switch_area + (2 * wall_thickness);
-        
-        // Zip tie holes start exactly at switch_depth
-        zip_tie_start_z = front_thickness + switch_depth;
         
         // Zip tie holes - vertical slots spanning entire chassis height
         // Extend beyond chassis by tolerance on both ends
