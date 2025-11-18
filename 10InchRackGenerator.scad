@@ -1,15 +1,15 @@
-dth = 254.0; // [ 254.0:10 inch, 152.4:6 inch]
+rack_width = 254.0; // [ 254.0:10 inch, 152.4:6 inch]
 rack_height = 4.0; // [0.5:0.5:5]
 half_height_holes = true; // [true:Show partial holes at edges, false:Hide partial holes]
 
 switch_width = 190.0;
-switch_depth = 135.0;
-switch_height = 28.30;
+switch_depth = 200.0;
+switch_height = 54;
 switch_count = 3; // Number of switches to stack
 
 case_thickness = 2; // Thickness of case walls
 wire_diameter = 7; // Diameter of power wire holes
-zip_tie_width = 1.5; // Width of zip tie slots
+zip_tie_hole_width = 3.0; // Width of zip tie slots
 
 front_wire_holes = true; // [true:Show front wire holes with channels, false:Hide]
 air_holes = true; // [true:Show air holes, false:Hide air holes]
@@ -63,10 +63,10 @@ module switch_mount(switch_width, switch_height, switch_depth, switch_count, cas
     zip_tie_indent_depth = 2;
     zip_tie_cutout_depth = 7;
 
-    chassis_depth_main = switch_depth + zip_tie_cutout_depth;
+    chassis_depth_main = switch_depth + zip_tie_hole_length + case_thickness;
     chassis_depth_indented = chassis_depth_main - zip_tie_indent_depth;
 
-    hole_total_width = zip_tie_hole_count * zip_tie_width;
+    hole_total_width = zip_tie_hole_count * zip_tie_hole_width;
     space_between_holes = (rack_width - hole_total_width) / (zip_tie_hole_count + 1);
 
     $fn = 64;
@@ -166,7 +166,8 @@ module switch_mount(switch_width, switch_height, switch_depth, switch_count, cas
             // Create one continuous chassis body
             total_chassis_height = total_switch_area + (2 * wall_thickness);
             translate([side_margin, (height - total_chassis_height) / 2, front_thickness]) {
-                rounded_chassis_profile(chassis_width, total_chassis_height, chassis_edge_radius, chassis_depth_main - front_thickness);
+                // Chassis extends full depth including zip tie area
+                rounded_chassis_profile(chassis_width, total_chassis_height, chassis_edge_radius, switch_depth + zip_tie_hole_length + case_thickness);
             }
             
             // Add wire channels if front_wire_holes is enabled
@@ -290,31 +291,26 @@ module switch_mount(switch_width, switch_height, switch_depth, switch_count, cas
         }
     }
     
-    // Create zip tie holes and indents
+    // Create zip tie holes - vertical slots spanning entire continuous chassis
     module zip_tie_features() {
-        // Zip tie holes
-        for (i = [0:zip_tie_hole_count-1]) {
-            x_pos = (rack_width - switch_width)/2 + (switch_width/(zip_tie_hole_count+1)) * (i+1);
-            translate([x_pos, 0, switch_depth]) {
-                cube([zip_tie_width, height, zip_tie_hole_length]);
-            }
-        }
-        
-        // Zip tie indents (top and bottom)
-        x_pos = (rack_width - switch_width)/2;
-        
         // Calculate total height needed for all switches and dividers
         total_switch_area = (switch_count * switch_height) + ((switch_count - 1) * divider_thickness);
-        total_chassis_height = total_switch_area + (2 * wall_thickness);
-        y_center = (height - total_chassis_height) / 2;
         
-        // Bottom indent
-        translate([x_pos, y_center, switch_depth]) {
-            cube([switch_width, zip_tie_indent_depth, zip_tie_cutout_depth]);
-        }
-        // Top indent
-        translate([x_pos, y_center + total_chassis_height - zip_tie_indent_depth, switch_depth]) {
-            cube([switch_width, zip_tie_indent_depth, zip_tie_cutout_depth]);
+        // Calculate starting Y position (centered in rack) and total chassis height
+        y_start = (height - total_switch_area - (2 * wall_thickness)) / 2 + wall_thickness;
+        total_chassis_height = total_switch_area + (2 * wall_thickness);
+        
+        // Zip tie holes start exactly at switch_depth
+        zip_tie_start_z = front_thickness + switch_depth;
+        
+        // Zip tie holes - vertical slots spanning entire chassis height
+        // Extend beyond chassis by tolerance on both ends
+        for (j = [0:zip_tie_hole_count-1]) {
+            x_pos = (rack_width - switch_width)/2 + (switch_width/(zip_tie_hole_count+1)) * (j+1);
+            // Start before chassis bottom, extend past chassis top
+            translate([x_pos, y_start - wall_thickness - tolerance, zip_tie_start_z]) {
+                cube([zip_tie_hole_width, total_chassis_height + (2 * tolerance), zip_tie_hole_length]);
+            }
         }
     }
 
