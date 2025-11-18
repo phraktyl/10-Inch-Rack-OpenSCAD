@@ -228,7 +228,7 @@ module switch_mount(switch_width, switch_height, switch_depth) {
         if (x_cols > 0 && z_rows > 0) {
             for (i = [0:x_cols-1]) {
                 for (j = [0:z_rows-1]) {
-                    // Stagger every other COLUMN (i) instead of row (j) for vertical honeycomb pattern
+                    // Stagger every other COLUMN (i) for vertical honeycomb pattern
                     z_offset = (i % 2 == 1) ? spacing_z/2 : 0;
                     x_pos = x_start + i * spacing_x;
                     z_pos = z_start + j * spacing_z + z_offset;
@@ -237,7 +237,7 @@ module switch_mount(switch_width, switch_height, switch_depth) {
                     if (z_pos + hole_d/2 <= cutout_center_z + switch_depth/2 - margin && 
                         z_pos - hole_d/2 >= cutout_center_z - switch_depth/2 + margin) {
                         translate([x_pos, height, z_pos]) {
-                            rotate([90, 0, 0]) {
+                            rotate([90, 30, 0]) {
                                 cylinder(h = height, d = hole_d, $fn = 6);
                             }
                         }
@@ -276,7 +276,7 @@ module switch_mount(switch_width, switch_height, switch_depth) {
                 
                 for (i = [0:y_cols-1]) {
                     for (j = [0:z_rows_side-1]) {
-                        // Stagger every other COLUMN (i) instead of row (j) for vertical honeycomb pattern
+                        // Stagger every other COLUMN (i) for vertical honeycomb pattern
                         z_offset = (i % 2 == 1) ? spacing_z/2 : 0;
                         y_pos = y_start + i * spacing_x;
                         z_pos = z_start_side + j * spacing_z + z_offset;
@@ -286,9 +286,7 @@ module switch_mount(switch_width, switch_height, switch_depth) {
                             z_pos - hole_d/2 >= cutout_center_z - switch_depth/2 + margin) {
                             translate([side_x, y_pos, z_pos]) {
                                 rotate([0, 90, 0]) {
-                                    rotate([0, 0, 90]) {  // Rotate hexagon 90 degrees to match front/back orientation
-                                        cylinder(h = chassis_width, d = hole_d, $fn = 6);
-                                    }
+                                    cylinder(h = chassis_width, d = hole_d, $fn = 6);
                                 }
                             }
                         }
